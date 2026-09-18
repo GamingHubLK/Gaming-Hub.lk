@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gaming Hub LK</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#10131a;color:#fff}
+header{padding:28px 18px;text-align:center;background:#171b25}
+h1{margin:0 0 8px;font-size:38px}
+header p{margin:0;color:#aeb6c5}
+.container{max-width:1000px;margin:auto;padding:25px 16px}
+.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+.card{background:#1b2130;border-radius:16px;padding:20px;text-align:center;box-shadow:0 5px 18px #0005}
+.card h2{margin-top:0}
+button{border:0;border-radius:10px;padding:11px 18px;background:#5865f2;color:white;font-weight:bold;cursor:pointer}
+button:hover{opacity:.85}
+.game{display:none;margin-top:25px;background:#1b2130;border-radius:16px;padding:20px;text-align:center}
+.game.active{display:block}
+#board{display:grid;grid-template-columns:repeat(3,90px);gap:8px;justify-content:center;margin:20px auto}
+.cell{width:90px;height:90px;font-size:36px;padding:0}
+#snakeCanvas{background:#080b10;border-radius:10px;max-width:100%;touch-action:none}
+#reaction{height:180px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:#303744;margin:20px auto;font-size:22px;cursor:pointer}
+footer{text-align:center;padding:25px;color:#8892a5}
+</style>
+</head>
+<body>
+<header>
+<h1>🎮 Gaming Hub LK</h1>
+<p>Explore and play simple browser games for free.</p>
+</header>
+
+<div class="container">
+<div class="games">
+<div class="card"><h2>❌⭕ Tic-Tac-Toe</h2><p>Play against yourself or a friend.</p><button onclick="showGame('ttt')">Play</button></div>
+<div class="card"><h2>🐍 Snake</h2><p>Use the arrow keys to move.</p><button onclick="showGame('snake')">Play</button></div>
+<div class="card"><h2>⚡ Reaction Test</h2><p>Test how quickly you can react.</p><button onclick="showGame('reactionGame')">Play</button></div>
+</div>
+
+<div id="ttt" class="game">
+<h2>❌⭕ Tic-Tac-Toe</h2>
+<p id="tttStatus">X's turn</p>
+<div id="board"></div>
+<button onclick="resetTTT()">Restart</button>
+<button onclick="hideGames()">Back</button>
+</div>
+
+<div id="snake" class="game">
+<h2>🐍 Snake</h2>
+<p>Press an arrow key to start. Don't hit the wall or yourself!</p>
+<canvas id="snakeCanvas" width="360" height="360"></canvas>
+<p>Score: <span id="score">0</span></p>
+<button onclick="startSnake()">Start / Restart</button>
+<button onclick="hideGames()">Back</button>
+</div>
+
+<div id="reactionGame" class="game">
+<h2>⚡ Reaction Test</h2>
+<p id="reactionText">Click Start, then wait for the box to turn green.</p>
+<div id="reaction">READY</div>
+<button onclick="startReaction()">Start</button>
+<button onclick="hideGames()">Back</button>
+<p id="reactionResult"></p>
+</div>
+</div>
+
+<footer>Gaming Hub LK • More games coming soon 🎮</footer>
+
+<script>
+function hideGames(){document.querySelectorAll('.game').forEach(g=>g.classList.remove('active'))}
+function showGame(id){hideGames();document.getElementById(id).classList.add('active');if(id==='ttt')resetTTT()}
+
+/* Tic-Tac-Toe */
+let cells, turn, over;
+function resetTTT(){
+  const b=document.getElementById('board');b.innerHTML='';
+  cells=Array(9).fill('');turn='X';over=false;
+  document.getElementById('tttStatus').textContent="X's turn";
+  cells.forEach((_,i)=>{
+    const btn=document.createElement('button');btn.className='cell';
+    btn.onclick=()=>playTTT(i,btn);b.appendChild(btn);
+  });
+}
+function playTTT(i,btn){
+ if(over||cells[i])return;
+ cells[i]=turn;btn.textContent=turn;
+ const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+ if(wins.some(w=>w.every(x=>cells[x]===turn))){document.getElementById('tttStatus').textContent=turn+' wins!';over=true;return}
+ if(cells.every(Boolean)){document.getElementById('tttStatus').textContent='Draw!';over=true;return}
+ turn=turn==='X'?'O':'X';document.getElementById('tttStatus').textContent=turn+"'s turn";
+}
+
+/* Snake */
+const canvas=document.getElementById('snakeCanvas'),ctx=canvas.getContext('2d');
+let snake,food,dx,dy,snakeTimer,score=0;
+function startSnake(){
+ clearInterval(snakeTimer);snake=[{x:180,y:180}];dx=20;dy=0;score=0;document.getElementById('score').textContent=score;placeFood();drawSnake();
+ snakeTimer=setInterval(moveSnake,120);
+}
+function placeFood(){food={x:Math.floor(Math.random()*18)*20,y:Math.floor(Math.random()*18)*20}}
+function drawSnake(){
+ ctx.clearRect(0,0,360,360);ctx.fillStyle='red';ctx.fillRect(food.x,food.y,18,18);
+ ctx.fillStyle='lime';snake.forEach(s=>ctx.fillRect(s.x,s.y,18,18));
+}
+function moveSnake(){
+ const head={x:snake[0].x+dx,y:snake[0].y+dy};
+ if(head.x<0||head.y<0||head.x>=360||head.y>=360||snake.some(s=>s.x===head.x&&s.y===head.y)){
+  clearInterval(snakeTimer);alert('Game over! Score: '+score);return;
+ }
+ snake.unshift(head);
+ if(head.x===food.x&&head.y===food.y){score++;document.getElementById('score').textContent=score;placeFood()}else snake.pop();
+ drawSnake();
+}
+document.addEventListener('keydown',e=>{
+ if(e.key==='ArrowUp'&&dy===0){dx=0;dy=-20}
+ if(e.key==='ArrowDown'&&dy===0){dx=0;dy=20}
+ if(e.key==='ArrowLeft'&&dx===0){dx=-20;dy=0}
+ if(e.key==='ArrowRight'&&dx===0){dx=20;dy=0}
+});
+
+/* Reaction Test */
+let reactionStart,reactionTimer;
+function startReaction(){
+ clearTimeout(reactionTimer);const box=document.getElementById('reaction');
+ box.style.background='#c33';box.textContent='WAIT...';
+ document.getElementById('reactionResult').textContent='';
+ const delay=1500+Math.random()*3500;
+ reactionTimer=setTimeout(()=>{reactionStart=performance.now();box.style.background='#2d9b57';box.textContent='CLICK NOW!'},delay);
+ box.onclick=function(){
+  if(box.textContent==='WAIT...'){clearTimeout(reactionTimer);box.style.background='#303744';box.textContent='TOO SOON!';return}
+  if(box.textContent==='CLICK NOW!'){const ms=Math.round(performance.now()-reactionStart);document.getElementById('reactionResult').textContent='Your reaction time: '+ms+' ms';box.style.background='#303744';box.textContent='READY'}
+ };
+}
+</script>
+</body>
+</html>
